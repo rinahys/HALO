@@ -57,4 +57,5 @@ class IMU_EKF:
         ])
     
     def get_orientation(self):
-        return self.q
+        return self.q 
+        

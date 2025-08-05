@@ -61,7 +61,6 @@ for epoch in range(300):
     model.train()
     preds = model(X_train)
     loss = loss_fn(preds, y_train)
-
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()

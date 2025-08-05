@@ -95,5 +95,5 @@ class IMU_EKF_Torch:
         t4 = 1.0 - 2.0 * (y * y + z * z)
         yaw = torch.atan2(t3, t4)
 
-        return torch.rad2deg(torch.stack([roll, pitch, yaw]))  # in degrees
+        return torch.rad2deg(torch.stack([roll, pitch, yaw]))  # in degree
 
