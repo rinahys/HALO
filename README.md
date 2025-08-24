@@ -4,6 +4,7 @@
 
 HALO (Hand Assisted Learning Operator) is a dataglove-controlled 3D simulation, which can mimic user movement as well as classify some gestures using machine learning.
 <br></br>
+<!--here we need to also talk about what we are pitching it as. Cheaper alternative for hobbyists, flexible and modular design, etc-->
 
 ## Simulation
 The simulation was created using three.js, with the rigged hand model being made using Blender.
@@ -25,3 +26,6 @@ yet to include
 tbc
 ## Web Interface
 tbc
+
+
+<!-- lets add a section either in the README or another file where we have all the sources we used like other github repos, articles etc and write what we took inspiration from exactly. would be useful for ourselves later -->
