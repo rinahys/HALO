@@ -16,6 +16,7 @@ Our design uses ten 6-axis MPU6050 IMUs (2 IMUs on each finger) and one 9-axis B
 ### Power
 A 9 volt battery? is used to power the dataglove. The voltage is dropped to the desired 3.3 volts using an lm2596 dc-dc buck converter.
 <img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/ca45b96a-a3da-4af4-9517-191788b638ed" />
+suggested improvements for the power design: using a LIPO battery instead of a 9v for better current capabilities and less noise
 ### MCU
 The microcontroller unit used is an ESP32. The IMUs use the I2C protocol to communicate with the ESP32. To allow the use of more than two IMUs with one ESP32, we used two TCA9548A I2C Multiplexers, which allow communication with up to 8 I2C devices each.
 
