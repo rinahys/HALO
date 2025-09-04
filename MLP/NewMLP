@@ -1,0 +1,190 @@
+import serial
+import time
+import csv
+import os
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from collections import deque
+
+# -----------------------------
+# CONFIG
+# -----------------------------
+PORT = "COM3"       # Update with your ESP32 serial port
+BAUD = 115200
+NUM_SENSORS = 11    # 1x MPU9250 + 10x MPU6050
+SAMPLE_DIM = 3      # each sensor: accel(x,y,z) + gyro(x,y,z)
+SEQ_LEN = 50        # window length for dynamic gestures
+CSV_FILE = "gesture_data.csv"
+MODEL_FILE = "gesture_model.pth"
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# DATASET
+class GestureDataset(Dataset):
+    def __init__(self, csv_file, seq_len=1):
+        self.samples = []
+        self.labels = []
+        self.seq_len = seq_len
+
+        with open(csv_file, "r") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                label = row[0]
+                data = np.array(row[1:], dtype=np.float32)
+                self.samples.append(data)
+                self.labels.append(label)
+
+        self.labels_map = {label: i for i, label in enumerate(sorted(set(self.labels)))}
+        self.inv_labels_map = {i: l for l, i in self.labels_map.items()}
+
+        # Convert to tensors
+        self.samples = torch.tensor(self.samples).reshape(-1, NUM_SENSORS * SAMPLE_DIM)
+        self.labels = torch.tensor([self.labels_map[l] for l in self.labels])
+
+        if seq_len > 1:
+            self.sequences = []
+            self.seq_labels = []
+            for i in range(len(self.samples) - seq_len):
+                self.sequences.append(self.samples[i:i+seq_len])
+                self.seq_labels.append(self.labels[i+seq_len-1])
+            self.samples = torch.stack(self.sequences)
+            self.labels = torch.tensor(self.seq_labels)
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        return self.samples[idx], self.labels[idx]
+
+# MODELS
+class MLP(nn.Module):  # For static gestures
+    def __init__(self, input_dim, num_classes):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, num_classes)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+class LSTMClassifier(nn.Module):  # For dynamic gestures
+    def __init__(self, input_dim, hidden_dim, num_classes, num_layers=2):
+        super().__init__()
+        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, num_classes)
+
+    def forward(self, x):
+        _, (h_n, _) = self.lstm(x)
+        return self.fc(h_n[-1])
+
+# TRAINING
+def train_model(model, dataset, epochs=10, batch_size=32, lr=1e-3):
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.CrossEntropyLoss()
+
+    model.train()
+    for epoch in range(epochs):
+        total_loss = 0
+        for X, y in loader:
+            X, y = X.to(device), y.to(device)
+            optimizer.zero_grad()
+            out = model(X)
+            loss = criterion(out, y)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        print(f"Epoch {epoch+1}/{epochs} - Loss: {total_loss/len(loader):.4f}")
+
+    torch.save({
+        "model_state": model.state_dict(),
+        "labels_map": dataset.labels_map
+    }, MODEL_FILE)
+    print("✅ Model saved!")
+
+# LIVE INFERENCE
+def live_inference(seq_mode=False):
+    ser = serial.Serial(PORT, BAUD)
+    buffer = deque(maxlen=SEQ_LEN if seq_mode else 1)
+
+    # Load model
+    checkpoint = torch.load(MODEL_FILE, map_location=device)
+    labels_map = checkpoint["labels_map"]
+    inv_labels_map = {i: l for l, i in labels_map.items()}
+
+    input_dim = NUM_SENSORS * SAMPLE_DIM
+    if seq_mode:
+        model = LSTMClassifier(input_dim, 128, len(labels_map)).to(device)
+    else:
+        model = MLP(input_dim, len(labels_map)).to(device)
+    model.load_state_dict(checkpoint["model_state"])
+    model.eval()
+
+    print("🔍 Running live inference...")
+
+    while True:
+        try:
+            line = ser.readline().decode().strip()
+            parts = line.split(",")
+            if len(parts) != NUM_SENSORS * SAMPLE_DIM:
+                continue
+
+            data = torch.tensor([float(x) for x in parts], dtype=torch.float32)
+            buffer.append(data)
+
+            if seq_mode and len(buffer) == SEQ_LEN:
+                X = torch.stack(list(buffer)).unsqueeze(0).to(device)
+            else:
+                X = buffer[-1].unsqueeze(0).to(device)
+
+            with torch.no_grad():
+                out = model(X)
+                pred = torch.argmax(out, dim=1).item()
+                print("Gesture:", inv_labels_map[pred])
+        except KeyboardInterrupt:
+            print("❌ Stopped.")
+            break
+
+# DATA COLLECTION
+def collect_data(gesture_name, duration=10):
+    ser = serial.Serial(PORT, BAUD)
+    start = time.time()
+    with open(CSV_FILE, "a", newline="") as f:
+        writer = csv.writer(f)
+        print(f"🎤 Collecting data for gesture '{gesture_name}' for {duration}s...")
+        while time.time() - start < duration:
+            line = ser.readline().decode().strip()
+            parts = line.split(",")
+            if len(parts) == NUM_SENSORS * SAMPLE_DIM:
+                row = [gesture_name] + parts
+                writer.writerow(row)
+    print(f"✅ Saved samples for '{gesture_name}'.")
+
+# MAIN
+if __name__ == "__main__":
+    # EXAMPLE WORKFLOW
+    # 1. Run once per gesture to collect training data
+    # collect_data("thumbs_up", duration=10)
+    # collect_data("fist", duration=10)
+    # collect_data("wave", duration=10)
+
+    # 2. Train STATIC model (MLP)
+    # dataset = GestureDataset(CSV_FILE, seq_len=1)
+    # model = MLP(NUM_SENSORS * SAMPLE_DIM, len(dataset.labels_map)).to(device)
+    # train_model(model, dataset, epochs=20)
+
+    # 3. Train DYNAMIC model (LSTM)
+    # dataset = GestureDataset(CSV_FILE, seq_len=SEQ_LEN)
+    # model = LSTMClassifier(NUM_SENSORS * SAMPLE_DIM, 128, len(dataset.labels_map)).to(device)
+    # train_model(model, dataset, epochs=20)
+
+    # 4. Run live inference (choose seq_mode=True for dynamic gestures)
+    live_inference(seq_mode=False)   # static gestures
+    # live_inference(seq_mode=True)  # dynamic gestures

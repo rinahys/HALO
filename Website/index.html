@@ -1,0 +1,165 @@
+<!-- ugotta install:
+  install ws
+ 
+  u gotta run for website
+python -m http.server 8000
+then go to:http://localhost:8000
+
+taskkill /IM node.exe /F
+(to killl old processes)
+
+
+  -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HALO Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js",
+      "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.158.0/examples/jsm/loaders/GLTFLoader.js",
+      "dat.gui": "https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.module.js"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="cool.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Arial, sans-serif; display: flex; flex-direction: row;
+      height: 100vh; overflow: hidden; background-color: #f0f0f0;
+    }
+    #sidebar {
+      width: 320px; background-color: #ffffff; border-right: 1px solid #ddd;
+      padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    #main { flex: 1; background-color: #ffffff; display: flex; flex-direction: column; }
+    #sim-container {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      border-bottom: 1px solid #333; position: relative;
+    }
+    #footer {
+      padding: 10px 20px; display: flex; justify-content: space-between;
+      background-color: #777777; color: #ddd; font-size: 0.9rem;
+    }
+    h2 { margin-top: 0; }
+    select, button { width: 100%; margin-top: 8px; margin-bottom: 16px; padding: 8px; font-size: 1rem; }
+    .section { margin-bottom: 30px; }
+    .gesture-buttons button { margin-bottom: 8px; }
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      #sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
+      #footer { flex-direction: column; align-items: flex-start; }
+    }
+    .high-contrast { background-color: #36454F; color: #ffffff; }
+    .high-contrast #sidebar { background-color: #36454F; color: #ffffff; }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div>
+      <h2>HALO Simulation</h2>
+     
+      <div class="section">
+        <label for="mode-select">Interaction Mode</label>
+        <select id="mode-select">
+          <option value="live">Live Preview</option>
+          <option value="Preview">Preview</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <label>Detected Gesture (ESP32)</label>
+        <div id="gesture-output">–</div>
+      </div>
+
+      <div class="section">
+        <label>Simulated Gesture (Server)</label>
+        <div id="simulated-output">–</div>
+      </div>
+
+      <div id="Preview-mode-ui" class="section" style="display: none;">
+        <label>Play a Gesture</label>
+        <div class="gesture-buttons">
+          <button onclick="playGesture('Fist')">Fist</button>
+          <button onclick="playGesture('Peace')">Peace</button>
+          <button onclick="playGesture('Open Palm')">Open Palm</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Accessibility:</label>
+      <div class="toggle-container">
+        <label class="switch">
+          <input type="checkbox" id="contrast-toggle" onchange="toggleContrast()" />
+          <span class="slider round"></span>
+        </label>
+        <span class="toggle-label">Light/Dark mode</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="sim-container"></div>
+    <div id="footer">
+      <div>Node.js Status: <span id="connection-status">Disconnected</span></div>
+    </div>
+  </div>
+
+
+  <script type="module" src="main.js"></script>
+
+  <script>
+ 
+    const modeSelect = document.getElementById("mode-select");
+    const PreviewUI = document.getElementById("Preview-mode-ui");
+    modeSelect.addEventListener("change", () => {
+      PreviewUI.style.display = (modeSelect.value === "Preview") ? "block" : "none";
+    });
+
+    function toggleContrast() {
+      document.body.classList.toggle('high-contrast');
+    }
+
+   
+    const socket = new WebSocket("ws://localhost:3000");
+    socket.onopen = () => {
+      document.getElementById("connection-status").textContent = "Connected ";
+    };
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        // Update UI text
+        if (data.source === "ESP32") {
+          document.getElementById("gesture-output").textContent = data.gesture || "—";
+        } else if (data.source === "server") {
+          document.getElementById("simulated-output").textContent = data.gesture || "—";
+        }
+
+        // Drive the sim with angles if present
+        if (Array.isArray(data.angles) && typeof window.updateHand === "function") {
+          window.updateHand(data.angles);
+        }
+      } catch (err) {
+        console.error("Error parsing WebSocket message:", err);
+      }
+    };
+    socket.onclose = () => {
+      document.getElementById("connection-status").textContent = "Disconnected";
+    };
+    socket.onerror = (err) => {
+      console.error("WebSocket error:", err);
+    };
+  </script>
+</body>
+</html>
