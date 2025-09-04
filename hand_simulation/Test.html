@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>IMU Glove Test</title>
+</head>
+<body>
+  <h1>IMU Glove Live Data</h1>
+  <pre id="output">Connecting...</pre>
+
+  <script>
+    // Replace with your ESP32 IP
+    const ESP32_IP = "192.168.17.42";  
+    const ws = new WebSocket(`ws://${ESP32_IP}:81/ws`);
+
+    const output = document.getElementById('output');
+
+    ws.onopen = () => {
+      output.textContent = "Connected to ESP32 WebSocket!";
+      console.log("Connected to ESP32 WebSocket!");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        // Update the <pre> with nicely formatted JSON
+        output.textContent = JSON.stringify(data, null, 2);
+        // Optional: log wrist angles
+        console.log("Wrist:", data.wrist);
+        console.log("Fingers:", data.fingers);
+        console.log("Thumbs:", data.thumbs);
+      } catch(e) {
+        console.error("JSON parse error:", e);
+      }
+    };
+
+    ws.onclose = () => {
+      output.textContent = "WebSocket disconnected!";
+      console.log("WebSocket disconnected!");
+    };
+
+    ws.onerror = (err) => {
+      output.textContent = "WebSocket error!";
+      console.error("WebSocket error:", err);
+    };
+  </script>
+</body>
+</html>

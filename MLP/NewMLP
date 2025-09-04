@@ -14,7 +14,7 @@ from collections import deque
 # -----------------------------
 PORT = "COM3"       # Update with your ESP32 serial port
 BAUD = 115200
-NUM_SENSORS = 11    # 1x MPU9250 + 10x MPU6050
+NUM_SENSORS = 11    # 1x BNO055 + 10x MPU6050
 SAMPLE_DIM = 3      # each sensor: accel(x,y,z) + gyro(x,y,z)
 SEQ_LEN = 50        # window length for dynamic gestures
 CSV_FILE = "gesture_data.csv"
