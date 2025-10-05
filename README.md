@@ -1,31 +1,77 @@
-# HALO
+🧤 HALO — Hand-Assisted Learning Operator
 
-## Introduction
+A low-cost, sensor-based dataglove and 3D simulation for visualising hand motion in real time.
 
-HALO (Hand Assisted Learning Operator) is a dataglove-controlled 3D simulation, which can mimic user movement as well as classify some gestures using machine learning. Our design prioritizes accessibility and modularity, being one of the few data glove products on the market built from affordable, widely available components. HALO is tailored for hobbyists and researchers; alongside the product, we provide a detailed guide and explanations to support setup and use, while also encouraging customization and extensions for users who want to build upon our foundation.
-<br></br>
-<!--here we need to also talk about what we are pitching it as. Cheaper alternative for hobbyists, flexible and modular design, etc-->
+👋 Overview
 
-## Simulation
-The simulation was created using three.js, with the rigged hand model being made using Blender.
+HALO is a prototype dataglove that tracks hand motion using embedded sensors and visualises it in a 3D environment.
+It was designed as a proof-of-concept to explore accessible motion tracking without relying on cameras or expensive commercial gloves.
 
-## Hardware 
-The hardware of the data glove can be categorized into three sections: IMUs, Power, and MCU
-### IMUs
-Our design uses ten 6-axis MPU6050 IMUs (2 IMUs on each finger) and one 9-axis BNO055 IMU on the back of the hand for wrist movement.
-### Power
-A 9 volt battery? is used to power the dataglove. The voltage is dropped to the desired 3.3 volts using an lm2596 dc-dc buck converter.
-<img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/ca45b96a-a3da-4af4-9517-191788b638ed" />
-suggested improvements for the power design: using a LIPO battery instead of a 9v for better current capabilities and less noise
-### MCU
-The microcontroller unit used is an ESP32. The IMUs use the I2C protocol to communicate with the ESP32. To allow the use of more than two IMUs with one ESP32, we used two TCA9548A I2C Multiplexers, which allow communication with up to 8 I2C devices each.
+🧩 How It Works
 
+HALO has three main layers:
 
-## Glove Design
-The components are assembled onto a sports glove and fitted using 3D-printed shields and surfaces to improve stability. Each finger houses two MPU6050 IMUs, one placed above the MCP joint and the other placed above the PIP joint. The BNO055 is placed on the back of the glove, beside the ESP32 and multiplexers, which are stacked on top. The ESP32 and MUXs are fitted into female header pins that are soldered onto a protoboard.
-The power module and battery are placed on the forearm, right below the wrist. The module is connected to a protoboard that includes circuitry for a switch, fuse, and an LED that turns on when the battery is connected.include schematic of power cct
-## Web Interface
-tbc
+Hardware — A glove fitted with multiple IMUs (motion sensors) and an ESP32 microcontroller.
 
+Transmission — Sensor data is streamed via I²C and serial to a computer.
 
-<!-- lets add a section either in the README or another file where we have all the sources we used like other github repos, articles etc and write what we took inspiration from exactly. would be useful for ourselves later -->
+Simulation — A 3D model (built in VPython) mirrors the hand’s motion in real time.
+
+It started as a web-based Three.js visualiser, then pivoted to VPython for faster debugging and calibration.
+
+⚙️ Hardware Summary
+
+11 IMUs total
+
+2× MPU6050 (6-axis) per finger
+
+1× BNO055 (9-axis) on the wrist
+
+ESP32 microcontroller
+
+2× TCA9548A I²C multiplexers (to handle address conflicts)
+
+3D-printed sensor mounts designed in SolidWorks
+
+⚠️ Reproducing the glove requires soldering, power management, and calibration — it’s more of a hardware experiment than a DIY kit.
+
+🧠 Software Stack
+Purpose	Tools / Libraries
+Microcontroller	Arduino IDE, Wire, MPU6050, Adafruit_BNO055
+Simulation	Python, VPython
+Modeling	Blender (hand model), SolidWorks (sensor mounts)
+IDEs	Visual Studio Code, Arduino IDE
+🧰 Data Processing
+
+To make IMU data usable:
+
+Raw sensor data → Low-pass + Complementary filtering
+
+Orientation represented as quaternions (for stable 3D rotation)
+
+Real-time updates rendered in VPython
+
+🔋 Power Notes
+
+Powering 11 sensors on one glove isn’t trivial.
+We tested 9 V and Li-ion batteries with LM2596 buck converters, but ultimately powered the prototype via USB for reliability.
+A proper power management PCB is recommended for future versions.
+
+🚀 Future Ideas
+
+Gesture recognition with machine learning
+
+Haptic feedback integration
+
+Modular PCB design
+
+Additional sensors (tactile, ultrasonic, IR)
+
+🧑‍💻 Team
+
+HALO was developed by
+Alistair Joubert, Hanna Semnani, Jai Kaza Venkata, Londrina Hyseni, Nicole Oliveira Costa, and Sarah Mahmoud
+with mentorship from Suraj Nair.
+
+💬 Notes
+The repo and documentation are here for learning, inspiration, and reference — if you build on it, let us know!
