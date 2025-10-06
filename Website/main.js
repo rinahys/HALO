@@ -116,7 +116,7 @@ function applyOrientation(bone, qIMU, name) {
   bone.quaternion.copy(q);
 }
 
-// function to find the mean values during a set time perod and take it as reference to calibrate
+// find the mean values,take it as reference to calibrate
 function calibrateOverTime(duration = 1500) {
   if (!latestData) return;
 
