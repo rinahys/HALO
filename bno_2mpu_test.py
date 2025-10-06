@@ -5,16 +5,16 @@ from serial.tools import list_ports
 # ---------- PORT ----------
 def pick_port():
     ports = list(list_ports.comports())
-    print("🔎 Detected serial ports:")
+    print(" Detected serial ports:")
     for p in ports:
         print(f" - {p.device}: {p.description}")
     for p in ports:
         desc = (p.description or "").lower()
         if any(k in desc for k in ("cp210","silicon","ch340","usb-serial","esp32","wch","ftdi")):
-            print(f"✅ Auto-selected: {p.device}")
+            print(f" Auto-selected: {p.device}")
             return p.device
     if ports:
-        print(f"⚠️ No ESP32/USB-serial keywords found, falling back to first port: {ports[0].device}")
+        print(f" No ESP32/USB-serial keywords found, falling back to first port: {ports[0].device}")
         return ports[0].device
     return None
 
@@ -22,15 +22,15 @@ PORT = pick_port()
 BAUD = 115200
 
 if not PORT:
-    raise RuntimeError("❌ No COM ports detected. Is your ESP32 plugged in?")
+    raise RuntimeError(" No COM ports detected. Is your ESP32 plugged in?")
 
 try:
     ser = serial.Serial(PORT, BAUD, timeout=0.01)
     time.sleep(2.0)
     ser.reset_input_buffer()
-    print(f"🚀 Connected on {PORT} at {BAUD} baud")
+    print(f" Connected on {PORT} at {BAUD} baud")
 except Exception as e:
-    raise RuntimeError(f"❌ Could not open {PORT}: {e}")
+    raise RuntimeError(f" Could not open {PORT}: {e}")
 
 # ---------- Scene ----------
 scene.title = "BNO wrist + two MPU finger bones (bend axis selectable)"
@@ -97,14 +97,14 @@ def on_key(evt):
     k = evt.key
     if k == "1":
         BEND_AXIS_1 = "roll" if BEND_AXIS_1 == "pitch" else "pitch"
-        print(f"🔄 Toggled bend axis for bone1: now {BEND_AXIS_1}")
+        print(f" Toggled bend axis for bone1: now {BEND_AXIS_1}")
     elif k == "2":
         BEND_AXIS_2 = "roll" if BEND_AXIS_2 == "pitch" else "pitch"
-        print(f"🔄 Toggled bend axis for bone2: now {BEND_AXIS_2}")
+        print(f" Toggled bend axis for bone2: now {BEND_AXIS_2}")
     elif k == "z":
         bend1_zero = None
         bend2_zero = None
-        print("✅ Re-zero calibration requested (put hand flat now)")
+        print(" Re-zero calibration requested (put hand flat now)")
 
 scene.bind("keydown", on_key)
 
@@ -172,7 +172,7 @@ while True:
                         "Keys: '1'=toggle bone1 axis, '2'=toggle bone2 axis, 'z'=re-zero\n")
 
             if not valid_seen:
-                print("✅ First valid frame received")
+                print(" First valid frame received")
                 valid_seen = True
 
             # ---------- Update scene ----------
@@ -197,3 +197,4 @@ while True:
     except Exception as e:
         print("Error:", e)
         rate(60)
+
