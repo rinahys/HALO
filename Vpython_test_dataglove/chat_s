@@ -58,8 +58,8 @@ hud = wtext(text="")
 BEND_AXIS_1 = "pitch"
 BEND_AXIS_2 = "pitch"
 SMOOTH = 0.15
-GAIN_1 = 1.0
-GAIN_2 = 0.5
+GAIN_1 = 0.4
+GAIN_2 = 0.3
 SIGN_P1 = 1.0
 SIGN_P2 = 1.0
 USE_CLAMP = False
