@@ -5,6 +5,7 @@
   <title>HALO Simulation</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!--imports for three.js-->
   <script type="importmap">
   {
     "imports": {
@@ -16,99 +17,104 @@
   }
   </script>
 
-  <link rel="stylesheet" href="cool.css" />
+  <link rel="stylesheet" href="cool.css" /> <!--for dark mode-->
   <style>
     * { box-sizing: border-box; }
     body {
-      margin: 0; font-family: Arial, sans-serif; display: flex; flex-direction: row;
-      height: 100vh; overflow: hidden; background-color: #f0f0f0;
+      margin:0; font-family: Arial;
+      display:flex; flex-direction: row;
+      height:100vh; overflow:hidden;
+      background:#f0f0f0;
     }
     #sidebar {
-      width: 320px; background-color: #ffffff; border-right: 1px solid #ddd;
-      padding: 20px; display: flex; flex-direction: column;
+      width:320px; background:#fff;
+      border-right:1px solid #ddd;
+      padding:20px; display:flex; flex-direction:column;
     }
-    #main { flex: 1; background-color: #ffffff; display: flex; flex-direction: column; }
+    #main { flex:1; display:flex; flex-direction:column; }
     #sim-container {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      border-bottom: 1px solid #333; position: relative;
+      flex:1; display:flex;
+      align-items:center; justify-content:center;
+      border-bottom:1px solid #333; position:relative;
     }
     #footer {
-      padding: 10px 20px; display: flex; justify-content: space-between;
-      background-color: #777777; color: #ddd; font-size: 0.9rem;
+      padding:10px 20px; display:flex; justify-content:space-between;
+      background:#777; color:#ddd; font-size:0.9rem;
     }
-    h2 { margin-top: 0; }
-    select, button { width: 100%; margin-top: 8px; margin-bottom: 16px; padding: 8px; font-size: 1rem; }
-    .section { margin-bottom: 20px; }
-    .gesture-buttons button { margin-bottom: 8px; }
-    @media (max-width: 768px) {
-      body { flex-direction: column; }
-      #sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
-      #footer { flex-direction: column; align-items: flex-start; }
+    h2 { margin-top:0; }
+    select, button {
+      width:100%; margin:8px 0; padding:8px; font-size:1rem;
     }
-    .high-contrast { background-color: #36454F; color: #ffffff; }
-    .high-contrast #sidebar { background-color: #36454F; color: #ffffff; }
-
-    /* Debug panel */
     #debug-log {
-      height: 150px;
-      overflow-y: auto;
-      background: #111;
-      color: #0f0;
-      font-size: 0.75rem;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 10px;
+      height:150px; overflow-y:auto;
+      background:#111; color:#0f0;
+      font-size:0.75rem; padding:10px;
+      border-radius:5px; margin-top:10px;
       white-space: pre-wrap;
     }
+    .toggle-container {
+      display:flex; align-items:center; margin-top:8px;
+    }
+    .switch {
+      position:relative; display:inline-block; width:40px; height:20px;
+    }
+    .switch input { display:none; }
+    .slider {
+      position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+      background-color:#ccc; transition:.4s; border-radius:20px;
+    }
+    .slider:before {
+      position:absolute; content:""; height:16px; width:16px;
+      left:2px; bottom:2px; background:white; transition:.4s; border-radius:50%;
+    }
+    input:checked + .slider { background-color:#2196F3; }
+    input:checked + .slider:before { transform:translateX(20px); }
+    .toggle-label { margin-left:10px; font-size:0.9rem; }
   </style>
 </head>
 <body>
   <div id="sidebar">
-    <div>
-      <h2>HALO Simulation</h2>
-     
-      <div class="section">
-        <label for="mode-select">Interaction Mode</label>
-        <select id="mode-select">
-          <option value="live">Live Preview</option>
-          <option value="Preview">Preview</option>
-        </select>
-      </div>
+    <h2>HALO Simulation</h2>
 
-      <div class="section">
-        <label>Detected Gesture (ESP32)</label>
-        <div id="gesture-output">–</div>
-      </div>
+    <div class="section">
+      <label>Detected Gesture (ESP32)</label>
+      <div id="gesture-output">–</div>
+    </div>
 
-      <div class="section">
-        <label>Simulated Gesture (Server)</label>
-        <div id="simulated-output">–</div>
-      </div>
+    <div class="section">
+      <label>Simulated Gesture (Server)</label>
+      <div id="simulated-output">–</div>
+    </div>
 
-      <div id="Preview-mode-ui" class="section" style="display: none;">
-        <label>Play a Gesture</label>
-        <div class="gesture-buttons">
-          <button onclick="playGesture('Fist')">Fist</button>
-          <button onclick="playGesture('Peace')">Peace</button>
-          <button onclick="playGesture('Open Palm')">Open Palm</button>
-        </div>
-      </div>
-
-      <!-- Debug log panel -->
-      <div class="section">
-        <label>ESP32 Debug Log</label>
-        <pre id="debug-log">Waiting for data…</pre>
-      </div>
+    <div class="section">
+      <label>ESP32 Debug Log</label>
+      <pre id="debug-log">Waiting for data…</pre>
     </div>
 
     <div class="section">
       <label>Accessibility:</label>
       <div class="toggle-container">
         <label class="switch">
-          <input type="checkbox" id="contrast-toggle" onchange="toggleContrast()" />
+          <input type="checkbox" id="contrast-toggle" onchange="document.body.classList.toggle('high-contrast')" />
           <span class="slider round"></span>
         </label>
         <span class="toggle-label">Light/Dark mode</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Calibration:</label>
+      <button id="calibrate-btn">Calibrate</button>
+    </div>
+
+    <div class="section">
+      <label>Debug:</label>
+      <div class="toggle-container">
+        <label class="switch">
+          <input type="checkbox" id="axes-toggle" />
+          <span class="slider round"></span>
+        </label>
+        <span class="toggle-label">Show Axes</span>
       </div>
     </div>
   </div>
@@ -120,67 +126,6 @@
     </div>
   </div>
 
-  <!-- main.js drives the hand rendering -->
   <script type="module" src="main.js"></script>
-
-  <script>
-    // Show/hide preview controls
-    const modeSelect = document.getElementById("mode-select");
-    const PreviewUI = document.getElementById("Preview-mode-ui");
-    modeSelect.addEventListener("change", () => {
-      PreviewUI.style.display = (modeSelect.value === "Preview") ? "block" : "none";
-    });
-
-    function toggleContrast() {
-      document.body.classList.toggle('high-contrast');
-    }
-
-    // =============================
-    // WebSocket to ESP32
-    // =============================
-    const ESP32_IP = "192.168.50.253";  // change if needed
-    const ws = new WebSocket(`ws://${ESP32_IP}:81`);
-    const debugLog = document.getElementById("debug-log");
-
-    function logDebug(msg) {
-      debugLog.textContent += "\n" + msg;
-      debugLog.scrollTop = debugLog.scrollHeight;
-    }
-
-    ws.onopen = () => {
-      document.getElementById("connection-status").textContent = "Connected";
-      debugLog.textContent = "Connected to ESP32 WebSocket!";
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        // Update gesture info (if ESP32 sends gestures later)
-        if (data.gesture) {
-          document.getElementById("gesture-output").textContent = data.gesture;
-        }
-
-        // Move the hand model
-        if (typeof window.updateHand === "function") {
-          window.updateHand(data);
-        }
-
-        // Log raw JSON
-        logDebug(event.data);
-      } catch (err) {
-        logDebug("JSON parse error: " + err.message);
-      }
-    };
-
-    ws.onclose = () => {
-      document.getElementById("connection-status").textContent = "Disconnected";
-      logDebug("WebSocket closed.");
-    };
-
-    ws.onerror = (err) => {
-      logDebug("WebSocket error: " + err.message);
-    };
-  </script>
 </body>
 </html>
