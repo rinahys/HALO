@@ -90,5 +90,6 @@ while True:
         sideArrow.pos = hand.pos
 
     except Exception as e:
-        print("⚠️ Error:", e)
+        print(" Error:", e)
         pass
+
