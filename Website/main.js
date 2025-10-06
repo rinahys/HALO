@@ -171,7 +171,7 @@ function calibrateOverTime(duration = 1500) {
         }
       });
 
-      if (statusEl) statusEl.textContent = "Calibration complete ✅";
+      if (statusEl) statusEl.textContent = "Calibration complete ";
       console.log("Calibration complete (averaged):", calibration);
     }
   }
@@ -287,7 +287,7 @@ function connectWS() {
 
   ws.onopen = () => {
     document.getElementById("connection-status").textContent = "Connected";
-    logDebug("✅ Connected to Node.js server");
+    logDebug(" Connected to Node.js server");
   };
 
   // Latency tracking
@@ -300,7 +300,7 @@ ws.onmessage = (evt) => {
     const data = JSON.parse(evt.data);
 
     if (data.type === "esp_status" && data.status === "disconnected") {
-      logDebug("⚠️ ESP32 disconnected");
+      logDebug("ESP32 disconnected");
       document.getElementById("connection-status").textContent = "ESP32 disconnected";
       return;
     }
@@ -322,7 +322,7 @@ ws.onmessage = (evt) => {
 
   ws.onclose = () => {
     document.getElementById("connection-status").textContent = "Disconnected";
-    logDebug("⚠️ WebSocket closed. Reconnecting in 3s...");
+    logDebug("WebSocket closed. Reconnecting in 3s...");
     setTimeout(connectWS, 3000);
   };
 
