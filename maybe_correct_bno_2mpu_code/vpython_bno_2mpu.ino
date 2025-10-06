@@ -1,3 +1,5 @@
+//this code is when ur testing with 1 bno, and 2 mpus, ardunio side for the vpython test
+
 #include <Wire.h>
 #include <MPU6050.h>
 #include <Adafruit_Sensor.h>
@@ -63,7 +65,7 @@ void updateMPUOnChannel(uint8_t ch, float &roll, float &pitch, float &yaw, float
   roll  = alpha * (roll  + gyroX * dt) + (1.0f - alpha) * rollAcc;
   pitch = alpha * (pitch + gyroY * dt) + (1.0f - alpha) * pitchAcc;
 
-  // Yaw from integrating gyro Z (deg) — will drift (you’ll override with BNO yaw on PC)
+  // Yaw from integrating gyro Z (deg) 
   yaw   += gyroZ * dt;
 }
 
@@ -82,7 +84,7 @@ void setup() {
   delay(2);
 
   // BNO055 on main bus (not behind mux)
-  bool bno_ok = bno.begin();     // keep it simple; default addr/mode
+  bool bno_ok = bno.begin();     
   if (!bno_ok) {
     Serial.println("ERR: BNO055 not detected (check wiring/addr ADR pin).");
   } else {
@@ -93,7 +95,6 @@ void setup() {
   bool mpu_prox_ok = initMPUOnChannel(CH_PROXIMAL);
   bool mpu_dist_ok = initMPUOnChannel(CH_DISTAL);
 
-  // Optional: configure DLPF/sample rate per channel
   if (mpu_prox_ok) { tcaSelect(CH_PROXIMAL); /* mpu.setDLPFMode(3); mpu.setRate(4); */ }
   if (mpu_dist_ok) { tcaSelect(CH_DISTAL);   /* mpu.setDLPFMode(3); mpu.setRate(4); */ }
 
