@@ -1,71 +1,88 @@
-//run this in terminal: node server.js
-//npm install express body-parser ws
+const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
+const os = require("os");
 
-
-
-//in terminal to run backend server :node server.js
-
-const WebSocket = require('ws');
-const express = require('express');
-const bodyParser = require('body-parser');
-
-const PORT = 3000;
-const HTTP_PORT = 3001;
-
-const wss = new WebSocket.Server({ port: PORT });
 const app = express();
-app.use(bodyParser.json());
+app.use(express.static(__dirname));
+const server = http.createServer(app);
 
-console.log(` WebSocket server running on ws://localhost:${PORT}`);
+const espWSS = new WebSocket.Server({ noServer: true });
+const browserWSS = new WebSocket.Server({ noServer: true });
+const browserClients = [];
 
-
-wss.on('connection', (ws) => {
-  console.log(" A browser connected");
-
-  // Sends a simulated gesture (for testing so ignore if i ll remove after)
-  const gestureList = ['Fist', 'Peace', 'Open Palm', 'Thumbs Up'];
- 
-  const interval = setInterval(() => {
-    const randomGesture = gestureList[Math.floor(Math.random() * gestureList.length)];
-   
-    const message = JSON.stringify({
-      source: "server",
-      gesture: randomGesture,
-      angles: [30, 45, 50, 60, 20]
+//upgrading http request to create persistent connection
+server.on("upgrade", (req, socket, head) => {
+  if (req.url === "/esp") {
+    espWSS.handleUpgrade(req, socket, head, (ws) => {
+      espWSS.emit("connection", ws, req);
     });
-
-    ws.send(message);
-    console.log(" Sent to browser:", message);
-  }, 3000);
-
-  ws.on('close', () => {
-    console.log(" Browser disconnected");
-    clearInterval(interval);
-  });
-
-
-  ws.on('error', (err) => {
-    console.error("WebSocket error:", err);
-  });
+  } else if (req.url === "/browser") {
+    browserWSS.handleUpgrade(req, socket, head, (ws) => {
+      browserWSS.emit("connection", ws, req);
+    });
+  } else {
+    socket.destroy();
+  }
 });
 
-// Handle incoming ESP32 data via HTTP POST
-app.post('/send-data', (req, res) => {
-  const data = req.body;
-  console.log(" Received from esp32:", data);
+// connecting to esp32
+espWSS.on("connection", (ws) => {
+  console.log("[Server] ESP32 connected");
 
-  // Forward the data to all connected browser clients
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
+  ws.on("message", (msg) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      data.server_ts = Date.now();
+      const out = JSON.stringify(data);
+
+      // Forward only if ESP is alive
+      browserClients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(out);
+        }
+      });
+    } catch (e) {
+      console.error("Invalid JSON from ESP:", e.message);
     }
   });
 
-  res.sendStatus(200);
+  ws.on("close", () => {
+    console.log("[Server] ESP32 disconnected");
+
+    // debug notice of disconnection
+    const notice = JSON.stringify({ type: "esp_status", status: "disconnected" });
+    browserClients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(notice);
+      }
+    });
+  });
 });
 
 
-app.listen(HTTP_PORT, () => {
-  console.log(` HTTP server running on http://localhost:${HTTP_PORT}`);
+//connecting to browser
+browserWSS.on("connection", (ws) => {
+  console.log("[Server] Browser connected");
+  browserClients.push(ws);
+
+  ws.on("close", () => {
+    const idx = browserClients.indexOf(ws);
+    if (idx !== -1) browserClients.splice(idx, 1);
+    console.log("[Server] Browser disconnected");
+  });
 });
 
+// starting the server
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log(`[Server] Running at http://localhost:${PORT}/index.html`);
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        console.log(`  LAN: http://${iface.address}:${PORT}/index.html`);
+      }
+    }
+  }
+});
