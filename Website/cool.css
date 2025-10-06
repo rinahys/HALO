@@ -1,67 +1,40 @@
-.high-contrast #main {
-    background-color: #36454F; /* keep light background for sim area */
-    color: black;
-  }
- 
-  .high-contrast #sim-container {
-    background-color: #36454F; /* slight gray contrast */
-  }
- 
-  .high-contrast #sim-placeholder {
-    border-color: #36454F;
-    color: #36454F;
-  }
+/*to allow for darkmode
 
- 
-  .toggle-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+
+/* Whole page background */
+body.high-contrast {
+  background: #1b2227;   /* background */
+  color: #eee;           /* text */
 }
 
-.toggle-label {
-  font-size: 0.95rem;
+/* Sidebar */
+body.high-contrast #sidebar {
+  background: #222;       /* sidebar */
+  color: #eee;            /* text */
+  border-right: 1px solid #444;
 }
 
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 26px;
+/* Footer */
+body.high-contrast #footer {
+  background: #222;       /* footer */
+  color: #ccc;            /* text */
 }
 
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+/* Debug log */
+body.high-contrast #debug-log {
+  background: #000;       /* black log background */
+  color: #0f0;            /* green terminal text */
 }
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0;
-  right: 0; bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 34px;
+/* Simulation area */
+body.high-contrast #main {
+  background-color: #36454F; 
+  color: black;
 }
-
-.slider::before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+body.high-contrast #sim-container {
+  background-color: #36454F;
 }
-
-input:checked + .slider {
-  background-color: #1b2227;
-}
-
-input:checked + .slider::before {
-  transform: translateX(24px);
+body.high-contrast #sim-placeholder {
+  border-color: #36454F;
+  color: #36454F;
 }
