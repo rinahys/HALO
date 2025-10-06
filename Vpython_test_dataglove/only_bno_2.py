@@ -1,3 +1,5 @@
+#only bno test 1-> python side  
+
 from vpython import *
 import serial
 import time
@@ -12,7 +14,7 @@ time.sleep(1)
 scene.title = "BNO055 Hand Simulation"
 scene.width = 1200
 scene.height = 900
-scene.background = color.black       # 🖤 black background
+scene.background = color.black      
 scene.range = 5
 scene.forward = vector(-1, -0.8, -0.6)
 scene.up = vector(0, 1, 0)
@@ -27,9 +29,9 @@ palm = box(length=1.5, height=0.2, width=1, color=color.orange)
 hand = compound([palm])
 
 # ---------- ORIENTATION ARROWS (hand's local axes) ----------
-frontArrow = arrow(length=1.2, shaftwidth=0.07, color=color.orange)  # 🟠 shorter
+frontArrow = arrow(length=1.2, shaftwidth=0.07, color=color.orange)  #
 upArrow = arrow(length=1, shaftwidth=0.07, color=color.magenta)
-sideArrow = box(length=4, shaftwidth=0.07, color=color.orange)     # 💜 much longer
+sideArrow = box(length=4, shaftwidth=0.07, color=color.orange)     # 
 
 # ---------- MANUAL ALIGNMENT OFFSETS ----------
 yaw_offset = math.radians(180)      # rotate around vertical axis (Y)
@@ -74,8 +76,8 @@ while True:
         vrot = v*math.cos(roll) + cross(k, v)*math.sin(roll)
 
         # Update arrows
-        frontArrow.axis = k * 1.2        # 🟠 shorter
-        sideArrow.axis = cross(k, vrot) * 4  # 💜 longer
+        frontArrow.axis = k * 1.2
+        sideArrow.axis = cross(k, vrot) * 4  
         upArrow.axis = vrot
 
         # Update hand
@@ -88,5 +90,6 @@ while True:
         upArrow.pos = hand.pos
 
     except Exception as e:
-        print("⚠️ Error:", e)
+        print(" Error:", e)
         pass
+
